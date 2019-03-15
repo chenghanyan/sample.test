@@ -7,6 +7,16 @@ use App\Http\Requests;
 use Auth;
 class SessionsController extends Controller
 {
+	public function __construct()
+	{
+		//Auth提供guest选项，只允许未登录用户访问的动作
+		$this->middleware('guest', [
+			'only' => ['create']
+		]);
+	}
+	/**
+	 * 登录页面
+	 */
     public function create()
     {
     	return view('sessions.create');
@@ -23,7 +33,7 @@ class SessionsController extends Controller
     	if (Auth::attempt($credentials, $request->has('remember'))) {
     		//登录成功
     		session()->flash('success', '欢迎回来');
-    		return redirect()->route('users.show', [Auth::user()]);
+    		return redirect()->intended(route('users.show', [Auth::user()]));
     	} else {
     		//登录失败
     		session()->flash('danger', '用户名密码错误');
