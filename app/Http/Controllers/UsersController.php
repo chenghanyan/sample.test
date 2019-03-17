@@ -5,12 +5,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests;
 use Auth;
+use Mail;
 class UsersController extends Controller
 {
 	public function __construct()
 	{
 		$this->middleware('auth',[
-			'except' => ['show', 'create', 'store', 'index']//不需要身份验证的方法
+			'except' => ['show', 'create', 'store', 'index', 'confirmEmail']//不需要身份验证的方法
 		]);
 		//未登录用户只能访问注册
 		$this->middleware('guest', [
@@ -54,10 +55,12 @@ class UsersController extends Controller
     		'email' => $request->email,
     		'password' => bcrypt($request->password)
     	]);
-    	Auth::login($user);//自动登录
-    	session()->flash('success', '欢迎注册成功');
+    	// Auth::login($user);//自动登录
+        $this->sendEmailConfirmationTo($user);
+    	session()->flash('success', '验证邮箱已发送，请注意查收！');
     	//redirect()->route('users.show', [$user->id]);
-    	return redirect()->route('users.show', [$user]); //route自动获取主键id
+    	// return redirect()->route('users.show', [$user]); //route自动获取主键id
+        return redirect('/');
     }
     /**
      * 更新页面
@@ -95,5 +98,34 @@ class UsersController extends Controller
     	$user->delete();
     	session()->flash('success', '删除成功');
     	return back();
+    }
+    /**
+     * 发邮件
+     */
+    protected function sendEmailConfirmationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'aufree@yousails.com';
+        $name = 'Aufree';
+        $to = $user->email;
+        $subject = "感谢注册 Sample 应用！请确认你的邮箱。";
+
+        Mail::send($view, $data, function ($message) use ($to, $subject) {
+            $message->to($to)->subject($subject);
+        });
+    }
+    /**
+     * 邮箱验证
+     */
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+        $user->activation_token = null;
+        $user->activated = true;
+        $user->save();
+        Auth::login($user);
+        session()->flash('success', '激活成功');
+        return redirect()->route('users.show',$user->id);
     }
 }
