@@ -33,13 +33,13 @@ class UsersController extends Controller
     {
     	return view('users.create');
     }
-    /**
-     * 更新页面
-     */
-    public function show(User $user)
-    {
-    	return view('users.show', compact('user'));
-    }
+    // /**
+    //  * 更新页面
+    //  */
+    // public function show(User $user)
+    // {
+    // 	return view('users.show', compact('user'));
+    // }
     /**
      * 用户注册
      */
@@ -127,5 +127,16 @@ class UsersController extends Controller
         Auth::login($user);
         session()->flash('success', '激活成功');
         return redirect()->route('users.show',$user->id);
+    }
+    /**
+     * 显示用户微博
+     */
+    public function show (User $user)
+    {
+        $statuses = $user->statuses()
+                         ->orderBy('created_at', 'desc')
+                         ->paginate(30);
+        // return view('users.show', ['user' => $user, 'statuses' => $statuses]);
+        return view('users.show', compact('user', 'statuses'));
     }
 }

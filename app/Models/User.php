@@ -26,6 +26,9 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+    /**
+     * 时间监听
+     */
     public static function boot()
     {
         parent::boot();
@@ -45,5 +48,19 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPassword($token));
     }
-
+    /**
+     * 一对多
+     */
+    public function statuses()
+    {
+        return $this->hasMany(Status::class);
+    }
+    /**
+     * 获取用户微博，按照时间排序
+     */
+    public function feed()
+    {
+        return $this->statuses()
+                    ->orderBy('created_at','desc');
+    }
 }
